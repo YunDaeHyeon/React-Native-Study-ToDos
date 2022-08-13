@@ -43,7 +43,7 @@ export default function App() {
     Alert.alert(
       "Delete To Do", 
       "Are you sure?",[
-        {text: "Cancel"},
+        {text: "Cancel", style:"cancel"},
         // I'm Sure 클릭 시 익명함수를 지정하여 To DO 삭제 진행
         {
           text: "I'm Sure", 
@@ -146,27 +146,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-/*
-  입력한 데이터를 저장하기 위해 expo의 AsyncStorae 사용
-  설치 방법(터미널) : expo install @react-native-async-storage/async-storage
-  !! expo install은 현재 설치된 expo와 동일한 패키지를 설치한다.
-  import 방법 : import AsyncStorage from "@react-native-async-storage/async-storage"
-
-  사용 방법
-  const storeData = async (value) => {
-    try{
-      await AsyncStorage.setItem('@storage_Key', value);
-    }catch(e){
-      // saving error
-    }
-  }
-
-  주의사항
-  AsyncStorage를 사용하면 해당 API를 사용한 모든 곳에
-  async와 await를 지정해야한다.
-
-  Alert API
-  대화창(팝업창) 호출 API
-  사용법 : propmpt() -> iOS 전용, alert() -> 공용
-*/
