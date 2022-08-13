@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { theme } from "./colors";
-import { StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { useState } from 'react';
 
 export default function App() {
@@ -16,7 +16,7 @@ export default function App() {
     if(text === ""){ // 입력창이 비어있을 때 (text가 비어있을 때)
       return
     }
-    // 본래의 toDos에 새로운 Object를 추가한다.
+
     const newToDos = Object.assign({}, toDos, 
       {[Date.now()]:{text, work : working}});
     setToDos(newToDos);
@@ -42,6 +42,14 @@ export default function App() {
           value={text}
           onSubmitEditing={addToDos} // input에 적힌 데이터 return시.. (엔터)
           />
+          <ScrollView>
+            {
+              Object.keys(toDos).map((key) => (
+                <View style={styles.toDo} key={key}>
+                  <Text style={styles.toDoText}>{toDos[key].text}</Text>
+                </View>
+              ))}
+          </ScrollView>
     </View>
   );
 }
@@ -66,13 +74,32 @@ const styles = StyleSheet.create({
     paddingVertical:10,
     paddingHorizontal: 20,
     borderRadius: 30,
-    marginTop: 20,
+    marginVertical: 20,
     fontSize: 15,
+  },
+  toDo:{
+    backgroundColor: theme.toDoBg,
+    marginBottom: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 15,
+  },
+  toDoText:{
+    color: "white",
+    fontWeight: "400",
+    fontSize: 16,
   },
 });
 
 /*
   object assign -> object를 가져다가 다른 object와 합친다.
   ex) Object.assign({}, toDos, {[Date.now()]:{work:true}}) // 첫 번째 요소는 새로운 오브젝트, 
-  그 뒤는 넣고자 하는 오브젝트들
+  그 뒤는 넣고자 하는 오브젝트들 추가
+
+  만약, object assing이 어려우면 ES6 방법 사용
+  const newToDos = {...toDos, [Date.now()] : text, work:working}
+
+  Object.keys(넣고자 하는 object)
+  해당 함수는 Object들의 key만으로 이루어진 array를 출력한다.
+
 */
