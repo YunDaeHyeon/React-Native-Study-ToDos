@@ -34,7 +34,10 @@ export default function App() {
   // To Do 불러오기
   const loadToDos = async () => {
     const loadToDoItem = await AsyncStorage.getItem(STORAGE_KEY);
-    setToDos(JSON.parse(loadToDoItem)); //JSON.parse는 string을 JSON으로 변경한다.
+    // 만약, AsyncStorage가 비어있지 않다면
+    if(loadToDoItem){
+      setToDos(JSON.parse(loadToDoItem)); //JSON.parse는 string을 JSON으로 변경한다.
+    }
   }
 
   // To Do 삭제하기
