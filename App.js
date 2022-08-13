@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { theme } from "./colors";
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Platform } from 'react-native';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Fontisto } from '@expo/vector-icons';
@@ -42,23 +42,36 @@ export default function App() {
 
   // To Do 삭제하기
   const deleteToDo = async (key) => {
-    // 1, 2번째 인자 -> 제목, 내용 / 3번째 인자 -> array 형태의 Button
-    Alert.alert(
-      "Delete To Do", 
-      "Are you sure?",[
-        {text: "Cancel", style:"cancel"},
-        // I'm Sure 클릭 시 익명함수를 지정하여 To DO 삭제 진행
-        {
-          text: "I'm Sure", 
-          style: "destructive", // Alert의 style은 iOS만 적용 가능
-          onPress: () => {
-            // To Do를 삭제하기 위해서는 반드시 기존 To Do에 있는 삭제하고자 하는 key를 삭제해야한다.
-            const newToDos = {...toDos}; // 새로운 object를 만든다. 내용은 기존의 toDos로.
-            delete newToDos[key]; // 새로운 object(기존 toDos)에 있는 key를 삭제(delete 키워드)한다.
-            setToDos(newToDos); // 삭제한 뒤 State 변경
-            saveToDos(newToDos);
-        }},
-    ]);
+    // 실행중인 플랫폼 확인
+    if(Platform.OS === "web"){
+      // web에서는 Alert를 지원하지 않기에 confirm 사용
+      const ok = confirm("Do you want to delete this To Do?");
+      // 사용자가 ok를 클릭하면
+      if(ok){
+        // To Do를 삭제하기 위해서는 반드시 기존 To Do에 있는 삭제하고자 하는 key를 삭제해야한다.
+        const newToDos = {...toDos}; // 새로운 object를 만든다. 내용은 기존의 toDos로.
+        delete newToDos[key]; // 새로운 object(기존 toDos)에 있는 key를 삭제(delete 키워드)한다.
+        setToDos(newToDos); // 삭제한 뒤 State 변경
+        saveToDos(newToDos);
+      }
+    }else{
+      // 1, 2번째 인자 -> 제목, 내용 / 3번째 인자 -> array 형태의 Button
+      Alert.alert(
+        "Delete To Do", 
+        "Are you sure?",[
+          {text: "Cancel", style:"cancel"},
+          // I'm Sure 클릭 시 익명함수를 지정하여 To DO 삭제 진행
+          {
+            text: "I'm Sure", 
+            style: "destructive", // Alert의 style은 iOS만 적용 가능
+            onPress: () => {
+              const newToDos = {...toDos};
+              delete newToDos[key];
+              setToDos(newToDos);
+              saveToDos(newToDos);
+          }},
+      ]);
+    }
   }
   // input submut
   const addToDos = async () =>{
@@ -78,10 +91,10 @@ export default function App() {
       <StatusBar style="light"/>
       <View style={styles.header}>
         <TouchableOpacity onPress={onWorkClick}>
-          <Text style={{...styles.btnText, color: working? "white" : theme.grey}}>Work</Text>
+          <Text style={{fontSize: 38, color: working? "white" : theme.grey}}>Work</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={onTravleClick}>
-          <Text style={{...styles.btnText, color: !working? "white" : theme.grey}}>Travel</Text>
+          <Text style={{fontWeight: "600", color: !working? "white" : theme.grey}}>Travel</Text>
         </TouchableOpacity>
       </View>
         <TextInput 
@@ -120,10 +133,6 @@ const styles = StyleSheet.create({
     justifyContent:"space-between",
     flexDirection: "row",
     marginTop:100,
-  },
-  btnText:{
-    fontSize: 38,
-    fontWeight: "600",
   },
   input:{
     backgroundColor: "white",
