@@ -7,23 +7,41 @@ import { Fontisto } from '@expo/vector-icons';
 
 // AsyncStorage에 저장하기 위한 key 지정
 const STORAGE_KEY = "@toDos";
+const USER_KEY = "user";
 
 export default function App() {
   const [working, setWorking] = useState(true);
   const [text, setText] = useState("");
   const [toDos, setToDos] = useState({}); // object를 기본값으로. (Hashmap)
 
-  // useEffect 지정
+  // useEffect 지정 - 앱 최초 실행
   useEffect(()=> {
+    loadUserInfo();
     loadToDos();
   }, []);
 
-  const onTravleClick = () => setWorking(false);
-  const onWorkClick = () => setWorking(true);
+  // useEffect 지정 - working State가 변경될 때
+  useEffect(() => {
+    saveUserInfo();
+  }, [working]);
+
+  const onTravelClick = async () => {setWorking(false);};
+  const onWorkClick = async () => {setWorking(true);};
+
   // ToDos 저장
   const saveToDos = async (toSave) => {
     // JSON.stringify는 object를 string으로 변환한다.
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  }
+
+  // 유저 정보 저장
+  const saveUserInfo = async () => {
+    try{
+      const user = { working };
+      await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+    }catch(e){
+      e.Alert("에러 발생");
+    }
   }
 
   // input 입력
@@ -40,12 +58,22 @@ export default function App() {
     }
   }
 
+  // 유저 위치 불러오기
+  const loadUserInfo = async () => {
+    const userInfo = await AsyncStorage.getItem(USER_KEY);
+    // userInfo에 데이터가 있다면
+    if(userInfo){
+      const data = JSON.parse(userInfo);
+      setWorking(data.working);
+    }
+  }
+
   // To Do 삭제하기
   const deleteToDo = async (key) => {
     // 실행중인 플랫폼 확인
     if(Platform.OS === "web"){
       // web에서는 Alert를 지원하지 않기에 confirm 사용
-      const ok = confirm("Do you want to delete this To Do?");
+      const ok = confirm("삭제하시겠습니까?");
       // 사용자가 ok를 클릭하면
       if(ok){
         // To Do를 삭제하기 위해서는 반드시 기존 To Do에 있는 삭제하고자 하는 key를 삭제해야한다.
@@ -57,12 +85,12 @@ export default function App() {
     }else{
       // 1, 2번째 인자 -> 제목, 내용 / 3번째 인자 -> array 형태의 Button
       Alert.alert(
-        "Delete To Do", 
-        "Are you sure?",[
-          {text: "Cancel", style:"cancel"},
+        "항목 삭제", 
+        "삭제하시겠습니까?",[
+          {text: "최소", style:"cancel"},
           // I'm Sure 클릭 시 익명함수를 지정하여 To DO 삭제 진행
           {
-            text: "I'm Sure", 
+            text: "삭제", 
             style: "destructive", // Alert의 style은 iOS만 적용 가능
             onPress: () => {
               const newToDos = {...toDos};
@@ -73,6 +101,7 @@ export default function App() {
       ]);
     }
   }
+
   // input submut
   const addToDos = async () =>{
     if(text === ""){ // 입력창이 비어있을 때 (text가 비어있을 때)
@@ -85,21 +114,21 @@ export default function App() {
     await saveToDos(newToDos);
     setText("");
   }
-  console.log(toDos);
+
   return (
     <View style={styles.container}>
       <StatusBar style="light"/>
       <View style={styles.header}>
         <TouchableOpacity onPress={onWorkClick}>
-          <Text style={{fontSize: 38, color: working? "white" : theme.grey}}>Work</Text>
+          <Text style={{fontSize: 38, fontWeight: "600", color: working? "white" : theme.grey}}>Work</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onTravleClick}>
-          <Text style={{fontWeight: "600", color: !working? "white" : theme.grey}}>Travel</Text>
+        <TouchableOpacity onPress={onTravelClick}>
+          <Text style={{fontSize: 38, fontWeight: "600", color: !working? "white" : theme.grey}}>Travel</Text>
         </TouchableOpacity>
       </View>
         <TextInput 
           style={styles.input}
-          placeholder={working ? "Add a To Do" : "Where do you want to go?"}
+          placeholder={working ? "일정을 추가해주세요." : "어디로 떠나시나요?"}
           returnKeyType="done"
           onChangeText={onChangeText} // TextInput에 입력된 데이터 가져오기
           value={text}
