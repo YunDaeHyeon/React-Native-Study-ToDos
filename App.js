@@ -3,7 +3,7 @@ import { theme } from "./colors";
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Platform } from 'react-native';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Fontisto } from '@expo/vector-icons';
+import { FontAwesome, Fontisto } from '@expo/vector-icons';
 
 // AsyncStorage에 저장하기 위한 key 지정
 const STORAGE_KEY = "@toDos";
@@ -17,7 +17,7 @@ export default function App() {
   // TODO State
   const [toDos, setToDos] = useState({}); // object를 기본값으로. (Hashmap)
   // CheckBox State
-  const [check, setCheck] = useState(false);
+  // const [check, setCheck] = useState(false);
 
   // useEffect 지정 - 앱 최초 실행
   useEffect(()=> {
@@ -32,7 +32,7 @@ export default function App() {
 
   // useEffect 지정 - toDos State가 변경될 때
   useEffect(() => {
-    onClickCheck();
+    onTodoClickCheck();
   }, [toDos]);
 
   const onTravelClick = async () => {setWorking(false);};
@@ -119,19 +119,24 @@ export default function App() {
     }
     // 기존 ToDos에 사용자가 입력한 새로운 ToDo 합치기
     const newToDos = Object.assign({}, toDos, 
-      {[Date.now()]:{text, working, complete:check}}); // {text, working}은 {text(key):text(value), working(key):working(value)}와 같다.
+      {[Date.now()]:{text, working, complete:false}}); // {text, working}은 {text(key):text(value), working(key):working(value)}와 같다.
     setToDos(newToDos);
     await saveToDos(newToDos);
     setText("");
   }
   
   // 각 아이템 별 CheckBox 클릭 이벤트
-  const onClickCheck = async (key) => {
+  const onTodoClickCheck = async (key) => {
     toDos[key].complete = !toDos[key].complete;
     const updateToDos = {...toDos};
     setToDos(updateToDos);
     await AsyncStorage.mergeItem(STORAGE_KEY, JSON.stringify(updateToDos));
     console.log(toDos[key]);
+  }
+
+  // 각 아이템 수정 클릭
+  const onTodoClickEdit = () => {
+
   }
 
   return (
@@ -159,20 +164,28 @@ export default function App() {
                 toDos[key].working === working ? (
                 <View style={styles.toDo} key={key}>
                   <View style={styles.check}>
-                    <TouchableOpacity onPress={() => onClickCheck(key)}>
+                    <TouchableOpacity onPress={() => onTodoClickCheck(key)}>
                       <Fontisto 
                         name={toDos[key].complete === true ? "checkbox-active" : "checkbox-passive"}
                         size={18} 
                         color="white"/>
                     </TouchableOpacity>
                     <Text 
-                      style={toDos[key].complete === true ? {...styles.toDoText, textDecorationLine:"line-through", color:"red"} : styles.toDoText }
+                      style={toDos[key].complete === true ? styles.toDoTextComplete : styles.toDoText }
                       >{toDos[key].text}</Text>
                   </View>
-                  {/* 이때, 익명함수를 사용한 이유는 인자(key)를 deleteTodo에 넘겨줘야 하기 때문*/}
-                  <TouchableOpacity onPress={() => deleteToDo(key)}>
-                    <Fontisto name="trash" size={18} color={theme.grey}/>
-                  </TouchableOpacity>
+                  <View style={{flexDirection:"row"}}>
+                    {
+                      toDos[key].complete === true ? null : (
+                        <TouchableOpacity style={{marginHorizontal:10}} onPress={() => onTodoClickEdit(key)}>
+                          <FontAwesome name="edit" size={18} color={theme.grey}/>
+                        </TouchableOpacity>
+                      )
+                    }
+                    <TouchableOpacity onPress={() => deleteToDo(key)}>
+                      <Fontisto name="trash" size={18} color={theme.grey}/>
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 ) : null
               ))}
@@ -215,6 +228,14 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     fontWeight: "400",
     fontSize: 16,
+  },
+  toDoTextComplete:{
+    textDecorationLine:"line-through", 
+    color:"red",
+    marginLeft: 15,
+    fontWeight: "400",
+    fontSize: 16,
+    fontStyle:"italic",
   },
   check:{
     flexDirection: "row"
