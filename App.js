@@ -1,9 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import { theme } from "./colors";
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Platform } from 'react-native';
+import { StyleSheet, Dimensions,Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Platform, ActivityIndicator } from 'react-native';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FontAwesome, Fontisto } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, Fontisto } from '@expo/vector-icons';
 
 // AsyncStorage에 저장하기 위한 key 지정
 const STORAGE_KEY = "@toDos";
@@ -58,12 +58,6 @@ export default function App() {
   // input 입력
   const onChangeText = (payload) =>{
     setText(payload); // RN은 event.target.value와 달리 바로 데이터에 접근이 가능하다.
-  }
-
-  // edit input 입력
-  const onEditChangeText = (event, key) => {
-    console.log(event);
-    console.log(key)
   }
 
   // To Do 불러오기
@@ -156,7 +150,7 @@ export default function App() {
     setToDos(editToDos);
     await AsyncStorage.mergeItem(STORAGE_KEY, JSON.stringify(editToDos));
   }
-
+  
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -192,10 +186,23 @@ export default function App() {
         value={text}
         onSubmitEditing={addToDos} // input에 적힌 데이터 return시.. (엔터)
       />
-      <ScrollView>
-        {Object.keys(toDos).map(key =>
-          toDos[key].working === working ? (
-            <View  key={key}>
+        {
+          JSON.stringify(toDos) === '{}' ? (
+            <View style={styles.empty}>
+              <FontAwesome5
+                name="sad-tear"
+                size={50}
+                color="white"/>
+              <Text style={{color : "white", marginTop: 15, fontSize: 24}}>
+                항목이 비어있어요
+              </Text>
+            </View>
+          )
+          : (
+            <ScrollView>{
+              Object.keys(toDos).map(key =>
+              toDos[key].working === working ? (
+            <View key={key}>
               {toDos[key].edit === true ? (
                 <View style={styles.edit}>
                   <TextInput
@@ -255,8 +262,7 @@ export default function App() {
               )}
             </View>
           ) : null
-        )}
-      </ScrollView>
+        )}</ScrollView>)}
     </View>
   );
 }
@@ -279,6 +285,11 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginVertical: 20,
     fontSize: 15,
+  },
+  empty:{
+    marginTop: 150,
+    alignItems : "center",
+    justifyContent: "center"
   },
   edit:{
     backgroundColor: "white",
