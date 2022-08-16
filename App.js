@@ -16,8 +16,8 @@ export default function App() {
   const [text, setText] = useState("");
   // TODO State
   const [toDos, setToDos] = useState({}); // object를 기본값으로. (Hashmap)
-  // CheckBox State
-  // const [check, setCheck] = useState(false);
+  // TODO EDIT State
+  const [editText, setEditText] = useState({});
 
   // useEffect 지정 - 앱 최초 실행
   useEffect(()=> {
@@ -33,6 +33,7 @@ export default function App() {
   // useEffect 지정 - toDos State가 변경될 때
   useEffect(() => {
     onTodoClickCheck();
+    onTodoClickEdit();
   }, [toDos]);
 
   const onTravelClick = async () => {setWorking(false);};
@@ -57,6 +58,12 @@ export default function App() {
   // input 입력
   const onChangeText = (payload) =>{
     setText(payload); // RN은 event.target.value와 달리 바로 데이터에 접근이 가능하다.
+  }
+
+  // edit input 입력
+  const onEditChangeText = (event, key) => {
+    console.log(event);
+    console.log(key)
   }
 
   // To Do 불러오기
@@ -119,10 +126,19 @@ export default function App() {
     }
     // 기존 ToDos에 사용자가 입력한 새로운 ToDo 합치기
     const newToDos = Object.assign({}, toDos, 
-      {[Date.now()]:{text, working, complete:false}}); // {text, working}은 {text(key):text(value), working(key):working(value)}와 같다.
+      {[Date.now()]:{text, working, complete:false, edit : false}}); // {text, working}은 {text(key):text(value), working(key):working(value)}와 같다.
     setToDos(newToDos);
     await saveToDos(newToDos);
     setText("");
+  }
+
+  // Todo Edit Submit
+  const EditToDos = async (key) => {
+    toDos[key].text = editText.key;
+    toDos[key].edit = false;
+    const updateToDos = {...toDos};
+    setToDos(updateToDos);
+    await AsyncStorage.mergeItem(STORAGE_KEY, JSON.stringify(updateToDos));
   }
   
   // 각 아이템 별 CheckBox 클릭 이벤트
@@ -131,65 +147,116 @@ export default function App() {
     const updateToDos = {...toDos};
     setToDos(updateToDos);
     await AsyncStorage.mergeItem(STORAGE_KEY, JSON.stringify(updateToDos));
-    console.log(toDos[key]);
   }
 
   // 각 아이템 수정 클릭
-  const onTodoClickEdit = () => {
-
+  const onTodoClickEdit = async (key) => {
+    toDos[key].edit = !toDos[key].edit;
+    const editToDos = {...toDos};
+    setToDos(editToDos);
+    await AsyncStorage.mergeItem(STORAGE_KEY, JSON.stringify(editToDos));
   }
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light"/>
+      <StatusBar style="light" />
       <View style={styles.header}>
         <TouchableOpacity onPress={onWorkClick}>
-          <Text style={{fontSize: 38, fontWeight: "600", color: working? "white" : theme.grey}}>Work</Text>
+          <Text
+            style={{
+              fontSize: 38,
+              fontWeight: "600",
+              color: working ? "white" : theme.grey,
+            }}
+          >
+            할 일
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={onTravelClick}>
-          <Text style={{fontSize: 38, fontWeight: "600", color: !working? "white" : theme.grey}}>Travel</Text>
+          <Text
+            style={{
+              fontSize: 38,
+              fontWeight: "600",
+              color: !working ? "white" : theme.grey,
+            }}
+          >
+            여행
+          </Text>
         </TouchableOpacity>
       </View>
-        <TextInput 
-          style={styles.input}
-          placeholder={working ? "일정을 추가해주세요." : "어디로 떠나시나요?"}
-          returnKeyType="done"
-          onChangeText={onChangeText} // TextInput에 입력된 데이터 가져오기
-          value={text}
-          onSubmitEditing={addToDos} // input에 적힌 데이터 return시.. (엔터)
-          />
-          <ScrollView>
-            {
-              Object.keys(toDos).map((key) => (
-                toDos[key].working === working ? (
-                <View style={styles.toDo} key={key}>
-                  <View style={styles.check}>
-                    <TouchableOpacity onPress={() => onTodoClickCheck(key)}>
-                      <Fontisto 
-                        name={toDos[key].complete === true ? "checkbox-active" : "checkbox-passive"}
-                        size={18} 
-                        color="white"/>
-                    </TouchableOpacity>
-                    <Text 
-                      style={toDos[key].complete === true ? styles.toDoTextComplete : styles.toDoText }
-                      >{toDos[key].text}</Text>
-                  </View>
+      <TextInput
+        style={styles.input}
+        placeholder={working ? "일정을 추가해주세요." : "어디로 떠나시나요?"}
+        returnKeyType="done"
+        onChangeText={onChangeText} // TextInput에 입력된 데이터 가져오기
+        value={text}
+        onSubmitEditing={addToDos} // input에 적힌 데이터 return시.. (엔터)
+      />
+      <ScrollView>
+        {Object.keys(toDos).map(key =>
+          toDos[key].working === working ? (
+            <View  key={key}>
+              {toDos[key].edit === true ? (
+                <View style={styles.edit}>
+                  <TextInput
+                    returnKeyType="done"
+                    placeholder={toDos[key].text}
+                    value={editText}
+                    onChangeText={(editText) => setEditText({key:editText})}
+                    onSubmitEditing={() => EditToDos(key)}
+                  />
                   <View style={{flexDirection:"row"}}>
-                    {
-                      toDos[key].complete === true ? null : (
-                        <TouchableOpacity style={{marginHorizontal:10}} onPress={() => onTodoClickEdit(key)}>
-                          <FontAwesome name="edit" size={18} color={theme.grey}/>
+                    {toDos[key].edit === true ? (
+                        <TouchableOpacity
+                          style={{marginHorizontal: 10}}
+                          onPress={() => onTodoClickEdit(key)}
+                        >
+                          <FontAwesome name="edit" size={18} color={theme.grey} />
                         </TouchableOpacity>
-                      )
-                    }
-                    <TouchableOpacity onPress={() => deleteToDo(key)}>
-                      <Fontisto name="trash" size={18} color={theme.grey}/>
-                    </TouchableOpacity>
+                      ) : null }
+                      <TouchableOpacity onPress={() => deleteToDo(key)}>
+                        <Fontisto name="trash" size={18} color={theme.grey} />
+                      </TouchableOpacity>
                   </View>
                 </View>
-                ) : null
-              ))}
-          </ScrollView>
+              ) : (
+                  <View style={styles.toDo}>
+                    <View style={styles.check}>
+                    <TouchableOpacity onPress={() => onTodoClickCheck(key)}>
+                      <Fontisto
+                        name={toDos[key].complete === true
+                          ? "checkbox-active"
+                          : "checkbox-passive"}
+                        size={18}
+                        color="white" />
+                    </TouchableOpacity>
+                    <Text
+                      style={toDos[key].complete === true
+                        ? styles.toDoTextComplete
+                        : styles.toDoText}
+                    >
+                      {toDos[key].text}
+                    </Text>
+                  </View>
+                    <View style={{ flexDirection: "row" }}>
+                      {toDos[key].complete === true ? null : (
+                        <TouchableOpacity
+                          style={{ marginHorizontal: 10 }}
+                          onPress={() => onTodoClickEdit(key)}
+                        >
+                          <FontAwesome name="edit" size={18} color={theme.grey} />
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity onPress={() => deleteToDo(key)}>
+                        <Fontisto name="trash" size={18} color={theme.grey} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+              )}
+            </View>
+          ) : null
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -212,6 +279,15 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginVertical: 20,
     fontSize: 15,
+  },
+  edit:{
+    backgroundColor: "white",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 15,
   },
   toDo:{
     backgroundColor: theme.toDoBg,
